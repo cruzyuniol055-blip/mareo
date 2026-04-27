@@ -624,20 +624,6 @@ function esPro() {
 // ================================================================
 // VIDEOS
 // ================================================================
-const defaultVideos = [
-  { src: "1.mp4",  desc: "🔥", name: "Usuario 1"  },
-  { src: "2.mp4",  desc: "🔥", name: "Usuario 2"  },
-  { src: "3.mp4",  desc: "😈", name: "Usuario 3"  },
-  { src: "4.mp4",  desc: "🔥", name: "Usuario 4"  },
-  { src: "5.mp4",  desc: "🔥", name: "Usuario 5"  },
-  { src: "6.mp4",  desc: "😈", name: "Usuario 6"  },
-  { src: "7.mp4",  desc: "🔥", name: "Usuario 7"  },
-  { src: "8.mp4",  desc: "🔥", name: "Usuario 8"  },
-  { src: "9.mp4",  desc: "😈", name: "Usuario 9"  },
-  { src: "10.mp4", desc: "🔥", name: "Usuario 10" },
-  { src: "11.mp4", desc: "🔥", name: "Usuario 11" },
-  { src: "12.mp4", desc: "😈", name: "Usuario 12" },
-];
 
 async function cargarVideosNube() {
   document.getElementById("buscandoScreen").style.display = "flex";
@@ -661,16 +647,7 @@ async function cargarVideosNube() {
   }
 }
 
-function getVideos() {
-  try {
-    const s = localStorage.getItem('liveamo_videos');
-    if (s) { const p = JSON.parse(s); if (p && p.length) return p; }
-  } catch(e) {}
-  return defaultVideos;
-}
-
 function cargarVideo() {
-  videos = getVideos();
   if (!videos.length) { mostrarBuscando(null); return; }
   const v  = videos[videoIndex];
   const el = document.getElementById("videoPrincipal");
@@ -685,7 +662,6 @@ function cargarVideo() {
 }
 
 function cambiarVideo() {
-  videos = getVideos();
   videoIndex = (videoIndex + 1) % Math.max(videos.length, 1);
   cargarVideo();
   if (!esPro()) registrarVista();
@@ -721,7 +697,6 @@ function arrancarTimer() {
         mostrarBuscando(function() { videoIndex = 0; cargarVideo(); });
       } else {
         localStorage.setItem('liveamo_pro_vistas', String(vPro));
-        videos    = getVideos();
         videoIndex = (videoIndex + 1) % Math.max(videos.length, 1);
         cargarVideo();
       }
@@ -747,7 +722,6 @@ function mostrarCorte(soloPromo) {
 
 function cerrarCorte() {
   document.getElementById("corteScreen").style.display = "none";
-  videos    = getVideos();
   videoIndex = (videoIndex + 1) % Math.max(videos.length, 1);
   cargarVideo();
 }
@@ -867,7 +841,9 @@ navigator.mediaDevices.getUserMedia({ video: true, audio: false })
   .catch(function(){});
 
 // ================================================================
-// ARRANQUE
+// ARRANQUE — limpiar cache de videos locales
+localStorage.removeItem('liveamo_videos');
+localStorage.removeItem('liveamo_videos_admin');
 // ================================================================
 actualizarBtnPremium();
 
