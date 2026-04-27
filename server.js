@@ -1,24 +1,45 @@
 const express = require('express');
-const fs      = require('fs');
+const https   = require('https');
 const path    = require('path');
 
-const app  = express();
-const PORT = process.env.PORT || 3000;
-const DB   = path.join(__dirname, 'data.json');
-
-// ── Inicializar data.json si no existe ──
-if (!fs.existsSync(DB)) {
-  fs.writeFileSync(DB, JSON.stringify({ videos: [], pagos: [] }, null, 2));
-}
-
-function readDB()        { return JSON.parse(fs.readFileSync(DB, 'utf8')); }
-function writeDB(data)   { fs.writeFileSync(DB, JSON.stringify(data, null, 2)); }
+const app       = express();
+const PORT      = process.env.PORT || 3000;
+const ADMIN_KEY = process.env.ADMIN_KEY || 'liveamo2024';
+const BIN_ID    = process.env.BIN_ID    || '69eed0c936566621a8f5f9b3';
+const BIN_KEY   = process.env.BIN_KEY   || '$2a$10$CLq7dpciQj46GhxuRiF/AOnossbyUcFeuZU.rCvDH4L9SpAlns5dW';
 
 app.use(express.json());
 app.use(express.static(__dirname));
 
+// ── Helper: llamar a JSONbin desde el servidor (sin CORS) ──
+function jsonbin(method, data) {
+  return new Promise((resolve, reject) => {
+    const body = data ? JSON.stringify(data) : null;
+    const opts = {
+      hostname: 'api.jsonbin.io',
+      path:     `/v3/b/${BIN_ID}` + (method === 'GET' ? '/latest' : ''),
+      method,
+      headers: {
+        'X-Master-Key':   BIN_KEY,
+        'Content-Type':   'application/json',
+        'Content-Length': body ? Buffer.byteLength(body) : 0
+      }
+    };
+    const req = https.request(opts, res => {
+      let raw = '';
+      res.on('data', c => raw += c);
+      res.on('end', () => {
+        try { resolve(JSON.parse(raw)); }
+        catch(e) { reject(e); }
+      });
+    });
+    req.on('error', reject);
+    if (body) req.write(body);
+    req.end();
+  });
+}
+
 // ── Middleware auth admin ──
-const ADMIN_KEY = process.env.ADMIN_KEY || 'liveamo2024';
 function adminAuth(req, res, next) {
   const key = req.headers['x-admin-key'] || req.query.key;
   if (key !== ADMIN_KEY) return res.status(401).json({ error: 'No autorizado' });
@@ -26,37 +47,57 @@ function adminAuth(req, res, next) {
 }
 
 // ── GET /api/videos ── Todos los usuarios
-app.get('/api/videos', (req, res) => {
-  const { videos } = readDB();
-  const activos = videos.filter(v => v.active !== false && v.src);
-  res.json(activos);
+app.get('/api/videos', async (req, res) => {
+  try {
+    const data    = await jsonbin('GET');
+    const record  = data.record || {};
+    const videos  = Array.isArray(record.videos) ? record.videos : Array.isArray(record) ? record : [];
+    const activos = videos.filter(v => v.src && v.active !== false);
+    res.json(activos);
+  } catch(e) {
+    res.json([]);
+  }
 });
 
 // ── PUT /api/videos ── Solo admin
-app.put('/api/videos', adminAuth, (req, res) => {
-  const db = readDB();
-  db.videos = req.body;
-  writeDB(db);
-  res.json({ ok: true, count: db.videos.length });
+app.put('/api/videos', adminAuth, async (req, res) => {
+  try {
+    const data   = await jsonbin('GET');
+    const record = data.record || {};
+    const db     = typeof record === 'object' && !Array.isArray(record) ? record : {};
+    db.videos    = req.body;
+    await jsonbin('PUT', db);
+    res.json({ ok: true, count: db.videos.length });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // ── GET /api/pagos ── Solo admin
-app.get('/api/pagos', adminAuth, (req, res) => {
-  const { pagos } = readDB();
-  res.json(pagos);
+app.get('/api/pagos', adminAuth, async (req, res) => {
+  try {
+    const data   = await jsonbin('GET');
+    const record = data.record || {};
+    res.json(record.pagos || []);
+  } catch(e) { res.json([]); }
 });
 
 // ── POST /api/pagos ── Registrar pago
-app.post('/api/pagos', (req, res) => {
-  const db = readDB();
-  db.pagos.unshift({ ...req.body, fecha: new Date().toLocaleString('es') });
-  writeDB(db);
-  res.json({ ok: true });
+app.post('/api/pagos', async (req, res) => {
+  try {
+    const data   = await jsonbin('GET');
+    const record = data.record || {};
+    const db     = typeof record === 'object' && !Array.isArray(record) ? record : { videos: [] };
+    if (!db.pagos) db.pagos = [];
+    db.pagos.unshift({ ...req.body, fecha: new Date().toLocaleString('es') });
+    await jsonbin('PUT', db);
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// ── Todas las rutas → index.html ──
+// ── Servir páginas HTML ──
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-app.listen(PORT, () => console.log('LiveAmo corriendo en puerto ' + PORT));
+app.listen(PORT, () => console.log('LiveAmo en puerto ' + PORT));
