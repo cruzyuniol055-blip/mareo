@@ -9,6 +9,16 @@ const BIN_ID    = process.env.BIN_ID    || '69eed0c936566621a8f5f9b3';
 const BIN_KEY   = process.env.BIN_KEY   || '$2a$10$CLq7dpciQj46GhxuRiF/AOnossbyUcFeuZU.rCvDH4L9SpAlns5dW';
 
 app.use(express.json());
+
+// Sin caché para HTML — siempre servir la versión más reciente
+app.use((req, res, next) => {
+  if (req.path.endsWith('.html') || req.path === '/') {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+  }
+  next();
+});
+
 app.use(express.static(__dirname));
 
 // ── Helper: llamar a JSONbin desde el servidor (sin CORS) ──
